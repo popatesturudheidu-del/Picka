@@ -1,0 +1,1049 @@
+﻿var Remtairy = Remtairy || {};
+Remtairy.Tooltips = Remtairy.Tooltips || {};
+
+const REM_OLIVIA_TOOLTIP_TEXT_STARTING_Y = -5;
+const REM_OLIVIA_TOOLTIP_TEXT_LINEHEIGHT = 22;
+const REM_OLIVIA_TOOLTIP_PASSIVE_LINEHEIGHT = Yanfly.Param.VAFontSize + 8;
+
+//=============================================================================
+ /*:
+ * @plugindesc Tooltips
+ * @author Remtairy
+ *
+ * @help
+ * This is a private plugin. 
+ * Do not redistribute, use, or modify this plugin
+ * without explicit written permission from Remtairy.
+ *
+ */
+//=============================================================================
+
+Game_Actor.prototype.cacheDesireTooltips = function() {
+	this._cacheMouthDesireTooltip = TextManager.mouthDesireTooltipText();
+	this._cacheBoobsDesireTooltip = TextManager.boobsDesireTooltipText();
+	this._cachePussyDesireTooltip = TextManager.pussyDesireTooltipText();
+	this._cacheButtDesireTooltip = TextManager.buttDesireTooltipText();
+	this._cacheCockDesireTooltip = TextManager.cockDesireTooltipText();
+}
+
+TextManager.stateTooltipText = function(battler, stateId) {
+	let battlerName = battler.name();
+	if(battler.isEnemy()) {
+		if(battler.isUnique)
+			battlerName = battler.originalName();
+		else
+			battlerName = battler._randomEnemyName;
+	}
+	
+	switch(stateId) {
+	case STATE_DISARMED_ID:
+		return TextManager.StateTooltipsDisarmed;
+	case STATE_ENEMY_STANCE_SLASH_ID: 
+	case STATE_ACTOR_SLASH_STANCE_ID:
+		return TextManager.StateTooltipsSlashStance.format(battlerName);
+	case STATE_ENEMY_STANCE_PIERCE_ID: 
+	case STATE_ACTOR_PIERCE_STANCE_ID:
+		return TextManager.StateTooltipsPierceStance.format(battlerName);
+	case STATE_ENEMY_STANCE_BLUNT_ID: 
+	case STATE_ACTOR_BLUNT_STANCE_ID:
+		return TextManager.StateTooltipsBluntStance.format(battlerName);
+	case STATE_HORNY_ID:
+		if(battler.isActor()) {
+			if(Karryn.hasPassive(PASSIVE_HORNY_COUNT_THREE_ID))
+				return TextManager.StateTooltipsHornyThree;
+			else if(Karryn.hasPassive(PASSIVE_HORNY_COUNT_TWO_ID))
+				return TextManager.StateTooltipsHornyTwo;
+			else if(Karryn.hasPassive(PASSIVE_HORNY_COUNT_ONE_ID))
+				return TextManager.StateTooltipsHornyOne;
+			else
+				return TextManager.StateTooltipsHornyZero;
+		}
+		else {
+			return TextManager.StateTooltipsEnemyHorny.format(battlerName);
+		}
+	case STATE_COOL_AND_COLLECTED_ID:
+		return TextManager.StateTooltipsCool;
+	case STATE_WEARING_PANTIES_ID:
+		return TextManager.StateTooltipsWearingPanties;
+	case STATE_NO_PANTIES_ID:
+		return TextManager.StateTooltipsNotWearingPanties;
+	case STATE_IS_WET_ID:
+		return TextManager.StateTooltipsIsWet;
+	case STATE_IS_NOT_WET_ID:
+		return TextManager.StateTooltipsNotWet;
+	case STATE_IS_VIRGIN_ID:
+		if(Karryn.hasEdict(EDICT_PUBLISH_VIRGIN_STATUS)) {
+			return TextManager.StateTooltipsVirginPublished;
+		}
+		else {
+			if(Karryn.hasPassive(PASSIVE_SEXUAL_PARTNERS_TOTAL_THREE_ID))
+				return TextManager.StateTooltipsVirginLow;
+			else if(Karryn.hasPassive(PASSIVE_SEXUAL_PARTNERS_TOTAL_TWO_ID))
+				return TextManager.StateTooltipsVirginMed;
+			else
+				return TextManager.StateTooltipsVirginHigh;
+		}
+	case STATE_ONANI_FRUSTRATED_ID:
+		return TextManager.StateTooltipsFrustrated;
+	case STATE_CONFIDENT_ID:
+		if(Karryn.hasPassive(PASSIVE_SUBDUED_COUNT_TWO_ID))
+			return TextManager.StateTooltipsConfidentOne;
+		else
+			return TextManager.StateTooltipsConfidentZero;
+	case STATE_WEAKEN_ID:
+		return TextManager.StateTooltipsWeaken.format(battlerName);
+	case STATE_DIZZY_ID:
+		return TextManager.StateTooltipsDizzy.format(battlerName);
+	case STATE_SLOW_ID:
+		return TextManager.StateTooltipsSlow.format(battlerName);
+	case STATE_VULNERABLE_ID:
+		return TextManager.StateTooltipsVulnerable.format(battlerName);
+	case STATE_OFFBALANCE_ID:
+		return TextManager.StateTooltipsOffBalanced.format(battlerName);
+	case STATE_POISON_ID:
+		return TextManager.StateTooltipsPoison.format(battlerName);
+	case STATE_WEAKNESS_EXPOSED_ID:
+		return TextManager.StateTooltipsExposeWeakness.format();
+	case STATE_STUNNED_ID:
+		return TextManager.StateTooltipsStunned.format(battlerName);
+	case STATE_ENEMY_POSE_MASTER_ID:
+		return TextManager.StateTooltipsEnemyPoseMaster.format(battlerName);
+	case STATE_ATTACK_COMBO_COUNT_ID:
+		if(Karryn.hasPassive(PASSIVE_SUBDUED_COUNT_TWO_ID))
+			return TextManager.StateTooltipsActorAttackComboCocky.format(battler._tempAttackSkillConsUsage);
+		else
+			return TextManager.StateTooltipsActorAttackCombo.format(battler._tempAttackSkillConsUsage);
+	case STATE_SEX_COMBO_COUNT_ID:
+		return TextManager.StateTooltipsActorSexCombo.format(battler._tempSexSkillConsUsage);
+	case STATE_JUST_ORGASMED_ID:
+		return TextManager.StateTooltipsOrgasm;
+	case STATE_PUSSY_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPosePussySex.format(battlerName);
+	case STATE_RIGHTHAND_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseHandjob.format(battlerName);
+	case STATE_LEFTHAND_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseHandjob.format(battlerName);
+	case STATE_TITTYFUCK_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPosePaizuri.format(battlerName);
+	case STATE_BLOWJOB_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseBlowjob.format(battlerName);
+	case STATE_ANAL_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseAnalSex.format(battlerName);
+	case STATE_CUNNI_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseCunnilingus.format(battlerName);
+	case STATE_RIMMING_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseRimjob.format(battlerName);
+	case STATE_FOOTJOB_ENEMYPOSE_ID:
+		return TextManager.StateTooltipsEnemyPoseFootjob.format(battlerName);
+	case STATE_ENEMY_KISSED_ID:
+		return TextManager.StateTooltipsEnemyKissed.format(battlerName);
+	case STATE_AROUSED_ID:
+		return TextManager.StateTooltipsAroused;
+	case STATE_CAUTIOUS_STANCE_ID:
+		return TextManager.StateTooltipsCautiousStance;
+	case STATE_GUARD_ID:
+		return TextManager.StateTooltipsDefensiveStance;
+	case STATE_COUNTER_STANCE_ID:
+		return TextManager.StateTooltipsCounterStance;
+	case STATE_SECRETARY_STANCE_ID:
+		return TextManager.StateTooltipsSecretaryStance;
+	case STATE_LADY_STANCE_ID:
+		return TextManager.StateTooltipsLadyStance;
+	case STATE_PLEASURE_STANCE_ID:
+	case STATE_PLEASURE_STANCE_BATTLE_ID:
+	case STATE_PLEASURE_STANCE_AUTO_MENTAL_ID:
+		return TextManager.StateTooltipsPleasureStance;
+	case STATE_KI_ID:
+		if(Karryn.hasEdict(EDICT_SPEC_OFFENSIVE_MIND_KI))
+			return TextManager.StateTooltipsWillpowerKiTwo;
+		else
+			return TextManager.StateTooltipsWillpowerKiOne;
+	case STATE_FOCUS_ID:
+		if(Karryn.hasEdict(EDICT_SPEC_DEFENSIVE_MIND_FOCUS))
+			return TextManager.StateTooltipsWillpowerFocusTwo;
+		else
+			return TextManager.StateTooltipsWillpowerFocusOne;
+	case STATE_EYE_OF_THE_MIND_ID:
+		if(Karryn.hasEdict(EDICT_SPEC_OFFENSIVE_MIND_EOTM))
+			return TextManager.StateTooltipsWillpowerEyeOfTheMindTwo;
+		else
+			return TextManager.StateTooltipsWillpowerEyeOfTheMindOne;
+	case STATE_SEE_NO_EVIL_ID:
+		return TextManager.StateTooltipsWillpowerSeeNoEvil;
+	case STATE_HEAR_NO_EVIL_ID:
+		return TextManager.StateTooltipsWillpowerHearNoEvil;
+	case STATE_REALITY_MARBLE_ICON_ID:
+		return TextManager.StateTooltipsWillpowerRealityMarble;
+	case STATE_KARRYN_RESIST_ORGASM_ICON_ID:
+		return TextManager.StateTooltipsWillpowerResistOrgasm;
+	case STATE_KARRYN_EDGING_CONTROL_ID:
+		return TextManager.StateTooltipsWillpowerEdgingControlKarryn;
+	case STATE_ENEMY_EDGING_CONTROL_ID:
+		return TextManager.StateTooltipsWillpowerEdgingControlEnemy.format(battlerName);
+	case STATE_BONUS_PIERCE_DMG_ID:
+		return TextManager.StateTooltipsBonusPierceDamage.format(battlerName);
+	case STATE_BONUS_SLASH_DMG_ID:
+		return TextManager.StateTooltipsBonusSlashDamage.format(battlerName);
+	case STATE_BONUS_BLUNT_DMG_ID:
+		return TextManager.StateTooltipsBonusBluntDamage.format(battlerName);
+	case STATE_ENEMY_POST_CUM_STUN_ID:
+		return TextManager.StateTooltipsEjaculationStunned.format(battlerName);
+	case STATE_SLIME_REGEN_NORMAL_ID:
+		return TextManager.StateTooltipsSlimeRegenNormal.format(battlerName);
+	case STATE_SLIME_REGEN_FOURTH_ID:
+		return TextManager.StateTooltipsSlimeRegenFourth.format(battlerName);
+	case STATE_ORC_DEFENSIVE_PRESENCE_ID:
+		return TextManager.StateTooltipsOrcDefensivePresence.format(battlerName);
+	case STATE_ORC_COMMANDING_PRESENCE_ID:
+		if(Karryn.hasEdict(EDICT_ACCESSIBILITY_FOR_ORCS))
+			return TextManager.StateTooltipsOrcCommandingPresenceTwo.format(battlerName);
+		else if(Karryn.hasEdict(EDICT_REJECT_THE_ORCS))
+			return TextManager.StateTooltipsOrcCommandingPresenceThree.format(battlerName);
+		else if(Karryn.hasEdict(EDICT_REACH_UNDERSTANDING_WITH_ORCS))
+			return TextManager.StateTooltipsOrcCommandingPresenceFour.format(battlerName);
+		else 
+			return TextManager.StateTooltipsOrcCommandingPresenceOne.format(battlerName);
+	case STATE_LIZARDMAN_TWO_ID:
+	case STATE_LIZARDMAN_THREE_ID:
+	case STATE_LIZARDMAN_FOUR_ID:
+	case STATE_LIZARDMAN_FIVE_ID:
+	case STATE_LIZARDMAN_SEX_ID:
+		if(Karryn.hasEdict(EDICT_SCIENCE_VERSUS_LIZARDMEN))
+			return TextManager.StateTooltipsLizardmanRacialWeak.format(battlerName);
+		else
+			return TextManager.StateTooltipsLizardmanRacial.format(battlerName);
+	case STATE_YETI_HEAT_AURA_ID:
+		return TextManager.StateTooltipsYetiHeatAura.format(battlerName);
+	case STATE_YETI_HEAT_ENEMY_ONE_ID:
+		return TextManager.StateTooltipsYetiHeatAuraEnemyOne.format(battlerName);
+	case STATE_YETI_HEAT_ENEMY_TWO_ID:
+		return TextManager.StateTooltipsYetiHeatAuraEnemyTwo.format(battlerName);
+	case STATE_YETI_HEAT_KARRYN_ONE_ID:
+		return TextManager.StateTooltipsYetiHeatAuraKarrynOne;
+	case STATE_YETI_HEAT_KARRYN_TWO_ID:
+		return TextManager.StateTooltipsYetiHeatAuraKarrynTwo;
+	case STATE_YASU_EYE_OF_THE_MIND_ID:
+		return TextManager.StateTooltipsYasuEyeoftheMind.format(battlerName);
+	case STATE_YASU_KI_ID:
+		return TextManager.StateTooltipsYasuKi.format(battlerName);
+	case STATE_YASU_FOCUS_ID:
+		return TextManager.StateTooltipsYasuFocus.format(battlerName);
+	case STATE_ENEMY_GUARD_ID:
+		return TextManager.StateTooltipsEnemyDefensiveStance.format(battlerName);
+	case STATE_CLIT_TOY_PINK_ROTOR_ID:
+		return TextManager.StateTooltipsKarrynClitToy;
+	case STATE_PUSSY_TOY_PENIS_DILDO_ID:
+		return TextManager.StateTooltipsKarrynPussyToy;
+	case STATE_ANAL_TOY_ANAL_BEADS_ID:
+		return TextManager.StateTooltipsKarrynAnalToy;
+	case STATE_ENEMY_HAS_PINK_ROTOR_ID:
+		return TextManager.StateTooltipsEnemyClitToyPinkRotor.format(battlerName);
+	case STATE_ENEMY_HAS_PENIS_DILDO_ID:
+		return TextManager.StateTooltipsEnemyPussyToyPenisDildo.format(battlerName);
+	case STATE_ENEMY_HAS_ANAL_BEADS_ID:
+		return TextManager.StateTooltipsEnemyAnalToyAnalBeads.format(battlerName);
+	case STATE_ACCEPTING_NO_ALCOHOL_ID:
+		return TextManager.StateWaitressNoAlcohol.format(battler.rejectAlcoholWillCost());
+	case STATE_DIRTY_MUGS_ID:
+		if(battler._dirtyMugs === 1)
+			return TextManager.StateWaitressDirtyMugsSingular.format(battlerName);
+		else
+			return TextManager.StateWaitressDirtyMugsPlural.format(battlerName, battler._dirtyMugs);
+	case STATE_DIRTY_GLASSES_ID:
+		if(battler._dirtyGlasses === 1)
+			return TextManager.StateWaitressDirtyGlassesSingular.format(battlerName);
+		else
+			return TextManager.StateWaitressDirtyGlassesPlural.format(battlerName, battler._dirtyGlasses);
+	case STATE_AVAILABLE_MUGS_ID:
+		if($gameParty._waitressBattle_availableMugs === 1)
+			return TextManager.StateWaitressAvailableMugsSingular;
+		else
+			return TextManager.StateWaitressAvailableMugsPlural.format($gameParty._waitressBattle_availableMugs);
+	case STATE_AVAILABLE_GLASSES_ID:
+		if($gameParty._waitressBattle_availableGlasses === 1)
+			return TextManager.StateWaitressAvailableGlassesSingular;
+		else
+			return TextManager.StateWaitressAvailableGlassesPlural.format($gameParty._waitressBattle_availableGlasses);
+	case STATE_BAR_KARRYN_ID:
+		return TextManager.StateWaitressKarrynLocation.format(battlerName);
+	case STATE_BAR_TABLE_A_ID:
+		return TextManager.StateWaitressTableALocation;
+	case STATE_BAR_TABLE_B_ID:
+		return TextManager.StateWaitressTableBLocation;
+	case STATE_BAR_TABLE_C_ID:
+		return TextManager.StateWaitressTableCLocation;
+	case STATE_BAR_TABLE_D_ID:
+		return TextManager.StateWaitressTableDLocation;
+	case STATE_BAR_SLEEP_ID:
+		return TextManager.StateWaitressSleeping.format(battlerName);
+	case STATE_BAR_DRINKING_ORANGE_GLASS_ID: 
+	case STATE_BAR_DRINKING_PALE_ALE_ID: 
+	case STATE_BAR_DRINKING_WHITE_GLASS_ID:
+	case STATE_BAR_DRINKING_DARK_ALE_ID:
+	case STATE_BAR_DRINKING_WATER_ID:
+		return TextManager.StateWaitressDrinkingDrink.format(battlerName, TextManager.alcoholName(battler._bar_currentDrink));
+	case STATE_BAR_DRINKING_NOTHING_ID:
+		return TextManager.StateWaitressDrinkingNothing.format(battlerName);
+	case STATE_BAR_PATRON_WANTS_PALE_ALE_ID: 
+	case STATE_BAR_PATRON_WANTS_DARK_ALE_ID: 
+	case STATE_BAR_PATRON_WANTS_VODKA_ID:
+	case STATE_BAR_PATRON_WANTS_TEQUILA_ID:
+	case STATE_BAR_PATRON_WANTS_GOLD_RUM_ID:
+	case STATE_BAR_PATRON_WANTS_OVERPROOF_RUM_ID: 
+	case STATE_BAR_PATRON_WANTS_WHISKEY_ID: 
+	case STATE_BAR_PATRON_WANTS_WATER_ID:
+		return TextManager.StateWaitressWantsDrink.format(battlerName, TextManager.alcoholName(battler._bar_orderedDrink));
+
+	case STATE_VISITOR_STATUS_UNKNOWN_ID:
+		if(battler._fan_waitingForRequestResponse || battler._perv_waitingForRequestResponse)
+			return TextManager.StateReceptionistVisitorUnknownAfter.format(battlerName);
+		else
+			return TextManager.StateReceptionistVisitorUnknownBefore.format(battlerName);
+	case STATE_VISITOR_STATUS_WRITING_ID:
+		if(battler._visitor_finishedWritingPapers) 
+			return TextManager.StateReceptionistVisitorWritingAfter.format(battlerName);
+		else if(battler._visitor_startingWritingPapers) 
+			return TextManager.StateReceptionistVisitorWritingDuring.format(battlerName);
+		else
+			return TextManager.StateReceptionistVisitorWritingBefore.format(battlerName);
+	case STATE_VISITOR_STATUS_PAPER_ID:
+		if(battler._visitor_handedOverPapers)
+			return TextManager.StateReceptionistVisitorPaperAfter.format(battlerName, battler._visitor_pages);
+		else
+			return TextManager.StateReceptionistVisitorPaperBefore.format(battlerName, battler._visitor_pages);
+	case STATE_VISITOR_STATUS_TIME_ID:
+		return TextManager.StateReceptionistVisitorTime.format(battlerName, battler._visitor_time);
+	case STATE_VISITOR_LOCATION_MOVING_ID:
+		return TextManager.StateReceptionistVisitorMoving.format(battlerName);
+	case STATE_VISITOR_LOCATION_SITTING_ID:
+		return TextManager.StateReceptionistVisitorSitting.format(battlerName);
+	case STATE_VISITOR_LOCATION_DESK_ID:
+		return TextManager.StateReceptionistVisitorDesk.format(battlerName);
+	case STATE_VISITOR_LOCATION_LINE_ID:
+		return TextManager.StateReceptionistVisitorLine.format(battlerName);
+	case STATE_GLORY_PINK_ROTOR_ID:
+		return TextManager.StateTooltipsToiletPinkRotor;
+	case STATE_GLORY_PENIS_DILDO_ID:
+		return TextManager.StateTooltipsToiletPenisDildo;
+	case STATE_GLORY_ANAL_BEADS_ID:
+		return TextManager.StateTooltipsToiletAnalBeads;
+	case STATE_DANCE_COMBO_COUNT_ID:
+		return TextManager.StateStripperActorDanceCombo.format(battler._stripper_danceCombo);
+	case STATE_BENCH_KARRYN_ID:
+		return TextManager.StateTrainerKarrynLocation.format(battlerName);
+	}
+
+
+	return '';
+};
+
+// Desire Tooltips
+
+TextManager.mouthDesireTooltipText = function() {
+	let text = '';
+	let actor = $gameActors.actor(ACTOR_KARRYN_ID);
+	
+	text += TextManager.DesireTooltipsMouthIntro;
+	text += '\n \n';
+	
+	if(Karryn.hasEdict(EDICT_PUBLISH_DESIRES)) {
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += TextManager.DesireTooltipsDesireRequirementsKnown;
+			text += '\n';
+		}
+		
+		let req = 0;
+		
+		req = actor.suckFingersMouthDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordSuckFingers;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordSuckFingers, req);
+			text += '\n';
+		}
+		
+		req = actor.kissingMouthDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordKiss;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordKiss, req);
+			text += '\n';
+		}
+		
+		req = actor.blowjobMouthDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordBlowjob;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordBlowjob, req);
+			text += '\n';
+		}
+		
+		if(Karryn.showLevelOneSubjugatedEdicts() && !ConfigManager.disableRimjobs) {
+			req = actor.rimjobMouthDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordRimjob;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordRimjob, req);
+				text += '\n';
+			}
+		}
+	}
+	else {
+		text += TextManager.DesireTooltipsBodyDesireRequirementsUnknown;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_MOUTH_DESIRE_FIRST_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsMouthDesireDebuffOne;
+		text += '\n';
+	}
+	if(Karryn.hasPassive(PASSIVE_MAX_MOUTH_DESIRE_THREE_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsMouthDesireDebuffTwo;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_MOUTH_DESIRE_SECOND_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsMouthDesireTopBuff;
+		text += '\n';
+	}
+	
+	return text;
+};
+TextManager.boobsDesireTooltipText = function() {
+	let text = '';
+	let actor = $gameActors.actor(ACTOR_KARRYN_ID);
+	
+	text += TextManager.DesireTooltipsBoobsIntro;
+	text += '\n \n';
+	
+	if(Karryn.hasEdict(EDICT_PUBLISH_DESIRES)) {
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += TextManager.DesireTooltipsDesireRequirementsKnown;
+			text += '\n';
+		}
+		
+		let req = 0;
+		
+		req = actor.boobsPettingBoobsDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordBoobsPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordBoobsPetting, req);
+			text += '\n';
+		}
+		
+		req = actor.nipplesPettingBoobsDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordNipplesPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordNipplesPetting, req);
+			text += '\n';
+		}
+		
+		req = actor.tittyFuckBoobsDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordTittyFuck;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordTittyFuck, req);
+			text += '\n';
+		}
+	}
+	else {
+		text += TextManager.DesireTooltipsBodyDesireRequirementsUnknown;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_BOOBS_DESIRE_FIRST_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsBoobsDesireDebuffOne;
+		text += '\n';
+	}
+	if(Karryn.hasPassive(PASSIVE_MAX_BOOBS_DESIRE_THREE_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsBoobsDesireDebuffTwo;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_BOOBS_DESIRE_SECOND_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsBoobsDesireTopBuff;
+		text += '\n';
+	}
+	
+	return text;
+};
+TextManager.pussyDesireTooltipText = function() {
+	let text = '';
+	let actor = $gameActors.actor(ACTOR_KARRYN_ID);
+	
+	text += TextManager.DesireTooltipsPussyIntro;
+	text += '\n \n';
+	
+	if(Karryn.hasEdict(EDICT_PUBLISH_DESIRES)) {
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += TextManager.DesireTooltipsDesireRequirementsKnown;
+			text += '\n';
+		}
+		
+		let req = 0;
+		
+		req = actor.clitPettingPussyDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordClitPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordClitPetting, req);
+			text += '\n';
+		}
+		
+		if(Karryn.showLevelOneSubjugatedEdicts()) {
+			req = actor.clitToyPussyDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordClitToy;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordClitToy, req);
+				text += '\n';
+			}
+		}
+		
+		req = actor.pussyPettingPussyDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordPussyPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordPussyPetting, req);
+			text += '\n';
+		}
+		
+		req = actor.cunnilingusPussyDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordCunnilingus;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordCunnilingus, req);
+			text += '\n';
+		}
+			
+		if(Karryn.showLevelOneSubjugatedEdicts()) {	
+			req = actor.pussyToyPussyDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordPussyToy;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordPussyToy, req);
+				text += '\n';
+			}
+		}
+		
+		req = actor.pussySexPussyDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordPussySex;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordPussySex, req);
+			text += '\n';
+		}
+		
+		
+	}
+	else {
+		text += TextManager.DesireTooltipsBodyDesireRequirementsUnknown;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_PUSSY_DESIRE_FIRST_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsPussyDesireDebuffOne;
+		text += '\n';
+	}
+	if(Karryn.hasPassive(PASSIVE_MAX_PUSSY_DESIRE_THREE_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsPussyDesireDebuffTwo;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_PUSSY_DESIRE_SECOND_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsPussyDesireTopBuff;
+		text += '\n';
+	}
+	
+	return text;
+};
+TextManager.buttDesireTooltipText = function() {
+	let text = '';
+	let actor = $gameActors.actor(ACTOR_KARRYN_ID);
+	
+	text += TextManager.DesireTooltipsButtIntro;
+	text += '\n \n';
+	
+	if(Karryn.hasEdict(EDICT_PUBLISH_DESIRES)) {
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += TextManager.DesireTooltipsDesireRequirementsKnown;
+			text += '\n';
+		}
+		
+		let req = 0;
+		
+		req = actor.buttPettingButtDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordButtPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordButtPetting, req);
+			text += '\n';
+		}
+		
+		req = actor.spankingButtDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordButtSpank;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordButtSpank, req);
+			text += '\n';
+		}
+		
+		req = actor.analPettingButtDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordAnalPetting;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordAnalPetting, req);
+			text += '\n';
+		}
+		
+		if(Karryn.showLevelOneSubjugatedEdicts()) {
+			req = actor.analToyButtDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordAnalToy;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordAnalToy, req);
+				text += '\n';
+			}
+		}
+		
+		req = actor.analSexButtDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordAnalSex;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordAnalSex, req);
+			text += '\n';
+		}	
+	}
+	else {
+		text += TextManager.DesireTooltipsBodyDesireRequirementsUnknown;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_BUTT_DESIRE_FIRST_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsButtDesireDebuffOne;
+		text += '\n';
+	}
+	if(Karryn.hasPassive(PASSIVE_MAX_BUTT_DESIRE_THREE_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsButtDesireDebuffTwo;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_BUTT_DESIRE_SECOND_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsButtDesireTopBuff;
+		text += '\n';
+	}
+	
+	return text;
+};
+TextManager.cockDesireTooltipText = function() {
+	let text = '';
+	let actor = $gameActors.actor(ACTOR_KARRYN_ID);
+	
+	text += TextManager.DesireTooltipsCockIntro;
+	text += '\n \n';
+	
+	if(Karryn.hasEdict(EDICT_PUBLISH_DESIRES)) {
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += TextManager.DesireTooltipsDesireRequirementsKnown;
+			text += '\n';
+		}
+		
+		let req = 0;
+		
+		req = actor.bodyBukkakeCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordBodyBukkake;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordBodyBukkake, req);
+			text += '\n';
+		}
+		
+		req = actor.handjobCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordHandjob;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordHandjob, req);
+			text += '\n';
+		}
+		
+		req = actor.blowjobCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordBlowjob;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordBlowjob, req);
+			text += '\n';
+		}
+		
+		req = actor.tittyFuckCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordTittyFuck;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordTittyFuck, req);
+			text += '\n';
+		}
+		
+		if(Karryn.showLevelOneSubjugatedEdicts() && !ConfigManager.disableFootjobs) {
+			req = actor.footjobCockDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordFootjob;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordFootjob, req);
+				text += '\n';
+			}
+		}
+		
+		req = actor.pussySexCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordPussySex;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordPussySex, req);
+			text += '\n';
+		}
+		
+		req = actor.analSexCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordAnalSex;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordAnalSex, req);
+			text += '\n';
+		}
+		
+		req = actor.faceBukkakeCockDesireRequirement();
+		if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+			text += '\\I[40]';
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += req;
+			if(req < 100) text += ' ';
+			if(req < 10) text += ' ';
+			text += '   \\I[41]   ';
+			text += TextManager.profileRecordFaceBukkake;
+			text += '\n';
+		}
+		else {
+			text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordFaceBukkake, req);
+			text += '\n';
+		}
+		
+		if(Karryn.hasPassive(PASSIVE_BJ_COUNT_ONE_ID)) {
+			req = actor.mouthSwallowCockDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordSwallow;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordSwallow, req);
+				text += '\n';
+			}
+		}
+		
+		if(Karryn.hasPassive(PASSIVE_FIRST_SEX_ID)) {
+			req = actor.pussyCreampieCockDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordPussyCreampie;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordPussyCreampie, req);
+				text += '\n';
+			}
+		}
+		
+		if(Karryn.hasPassive(PASSIVE_FIRST_ANAL_SEX_ID)) {
+			req = actor.analCreampieCockDesireRequirement();
+			if(TextManager.isEnglish || TextManager.isRussian || TextManager.isSpanish) {
+				text += '\\I[40]';
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += req;
+				if(req < 100) text += ' ';
+				if(req < 10) text += ' ';
+				text += '   \\I[41]   ';
+				text += TextManager.profileRecordAnalCreampie;
+				text += '\n';
+			}
+			else {
+				text += TextManager.DesireTooltipsDesireRequirementsKnownFormat.format(TextManager.profileRecordAnalCreampie, req);
+				text += '\n';
+			}
+		}
+	}
+	else {
+		text += TextManager.DesireTooltipsCockDesireRequirementsUnknown;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_COCK_DESIRE_FIRST_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsCockDesireDebuffOne;
+		text += '\n';
+	}
+	if(Karryn.hasPassive(PASSIVE_MAX_COCK_DESIRE_THREE_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsCockDesireDebuffTwo;
+		text += '\n';
+	}
+	
+	if(Karryn.hasPassive(PASSIVE_MAX_COCK_DESIRE_SECOND_ID)) {
+		text += ' \n';
+		text += TextManager.DesireTooltipsCockDesireTopBuff;
+		text += '\n';
+	}
+	
+	return text;
+};
+
+

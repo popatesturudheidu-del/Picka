@@ -1,0 +1,1491 @@
+﻿var Remtairy = Remtairy || {};
+Remtairy.Willpower = Remtairy.Willpower || {};
+
+//=============================================================================
+ /*:
+ * @plugindesc Willpower
+ * @author Remtairy
+ *
+ * @help
+ * This is a private plugin.
+ * Do not redistribute, use, or modify this plugin
+ * without explicit written permission from Remtairy.
+ *
+ */
+//=============================================================================
+
+const WILLPOWER_BASE_WP = 38;
+const ITEM_WILL_COST_ID = 1; //Item Id of the Willpower item
+const WILLPOWER_PER_MIND = 0.8;
+const WILLPOWER_PER_MIND_PLVL = 0.7;
+
+const WILLPOWER_SKILL_START = 81;
+const WILLPOWER_SKILL_END = 109;
+
+/////////
+// Window SkillList
+////////////////////
+
+Window_SkillList.prototype.drawSkillItemCost = function(skill, wx, wy, dw) {
+    if (Yanfly.Param.SCICostStyle === 0) return dw;
+    let array = this._actor.skillItemCost(skill);
+    let max = array.length;
+    if (max <= 0) return dw;
+    this.contents.fontSize = Yanfly.Param.SCIFontSize;
+    dw -= 2;
+    for (let i = 0; i < max; ++i) {
+      let arr = array[max - i - 1];
+      let item = arr[0];
+      let cost = arr[1];
+      dw = this.drawSoloItemCost(item, cost, wx, wy, dw, skill);
+    }
+    let returnWidth = dw - Yanfly.Param.SCCCostPadding;
+    this.resetFontSettings();
+    return returnWidth;
+};
+
+//willpower cost
+Window_SkillList.prototype.drawSoloItemCost = function(item, cost, wx, wy, dw, skill) {
+    let x = wx + dw - Window_Base._iconWidth;
+    this.drawIcon(item.iconIndex, x + 2, wy + REM_Y_ICON_PADDING);
+
+	if(item.id === ITEM_WILL_COST_ID) {
+		cost = this._actor.calculateWillSkillCost(cost, skill);
+	}
+	else if(item.id === ITEM_SECOND_COST_ID) {
+		if($gameParty.isInWaitressBattle) {
+			if(this._actor.isDeadDrunk) cost += 5;
+			else if(this._actor.isDrunk) cost += 3;
+			else if(this._actor.isTipsy) cost += 1;
+
+			if(this._actor.isAroused()) cost += 1;
+			if(this._actor.isWet) cost += 1;
+			if(this._actor.isHorny) cost += 1;
+
+			if(this._actor.hasThisTitle(TITLE_ID_EXPERIENCED_WAITRESS)) cost -= 1;
+			if(this._actor.isUsingThisTitle(TITLE_ID_EXPERIENCED_WAITRESS)) cost -= 2;
+		}
+	}
+
+    let amt1 = Yanfly.Util.toGroup(cost);
+    let amt2 = Yanfly.Util.toGroup(this._actor.numItems(item));
+    let fmt = Yanfly.Param.SCIAmountFmt;
+    let text = fmt.format(amt1, amt2);
+    if (Yanfly.Param.SCICostStyle === 1) {
+      let iconWidth = Window_Base._iconWidth + 4;
+      const textSprite = this.drawText(text, wx, wy + Yanfly.Param.SCIYBuffer, dw, 'right');
+      dw -= Math.max(iconWidth, Utils.getActualTextWidth(textSprite));
+    } else if (Yanfly.Param.SCICostStyle === 2) {
+		if(item.id === ITEM_WILL_COST_ID) {
+			let itemName = item.name;
+			if(item.hasRemNameDefault) itemName = item.remNameDefault;
+
+			if(TextManager.isEnglish) {
+				if(item.hasRemNameEN) itemName = item.remNameEN;
+			}
+			else if(TextManager.isJapanese) {
+				if(item.hasRemNameJP) itemName = item.remNameJP;
+			}
+			else if(TextManager.isSChinese) {
+				if(item.hasRemNameSCH) itemName = item.remNameSCH;
+			}
+			else if(TextManager.isTChinese) {
+				if(item.hasRemNameTCH) itemName = item.remNameTCH;
+			}
+			else if(TextManager.isKorean) {
+				if(item.hasRemNameKR) itemName = item.remNameKR;
+			}
+			else if(TextManager.isSpanish) {
+				if(item.hasRemNameSP) itemName = item.remNameSP;
+			}
+			else if(TextManager.isRussian) {
+				if(item.hasRemNameRU) itemName = item.remNameRU;
+			}
+
+			itemName = this.convertEscapeCharacters(itemName);
+			itemName = this.convertExtraEscapeCharacters(itemName);
+
+			text += ' ' + itemName;
+		}
+		else if(item.id === ITEM_SECOND_COST_ID) {
+			let itemName = item.name;
+			if(item.hasRemNameDefault) itemName = item.remNameDefault;
+
+			if(TextManager.isEnglish) {
+				if(item.hasRemNameEN) itemName = item.remNameEN;
+			}
+			else if(TextManager.isJapanese) {
+				if(item.hasRemNameJP) itemName = item.remNameJP;
+			}
+			else if(TextManager.isSChinese) {
+				if(item.hasRemNameSCH) itemName = item.remNameSCH;
+			}
+			else if(TextManager.isTChinese) {
+				if(item.hasRemNameTCH) itemName = item.remNameTCH;
+			}
+			else if(TextManager.isKorean) {
+				if(item.hasRemNameKR) itemName = item.remNameKR;
+			}
+			else if(TextManager.isSpanish) {
+				if(item.hasRemNameSP) itemName = item.remNameSP;
+			}
+			else if(TextManager.isRussian) {
+				if(item.hasRemNameRU) itemName = item.remNameRU;
+			}
+
+			itemName = this.convertEscapeCharacters(itemName);
+			itemName = this.convertExtraEscapeCharacters(itemName);
+
+			text += ' ' + itemName;
+		}
+		else {
+			let iconWidth = Window_Base._iconWidth;
+			dw -= iconWidth;
+		}
+		if(item.id === ITEM_WILL_COST_ID) this.changeTextColor(this.textColor(24));
+		else if(item.id === ITEM_SECOND_COST_ID) this.changeTextColor(this.textColor(6));
+		const textSprite = this.drawText(text, wx, wy + Yanfly.Param.SCIYBuffer, dw, 'right');
+		this.changeTextColor(this.normalColor());
+		dw -= Utils.getActualTextWidth(textSprite);
+    }
+    return dw;
+};
+
+Window_SkillList.prototype.costWidth = function() {
+    return WINDOW_SKILLLIST_SKILLCOST_WIDTH;
+};
+
+////////////
+//////////////
+// Game Actor
+//////////////
+////////////
+
+Game_Actor.prototype.resetWillpowerCosts = function() {
+	this._tempHealingThoughtsExtraCooldown = 0;
+	this._tempMindOverMatterExtraCooldown = 0;
+};
+
+Game_Actor.prototype.resetWillpowerEjaculationToggles = function() {
+	this._denyingExternalEjaculations = false;
+	this._denyingInternalEjaculations = false;
+};
+
+Game_Actor.prototype.resetWillpowerPleasureDamageToggles = function() {
+	this._reducingPleasureDamageByThird = false;
+	this._reducingPleasureDamageByHalf = false;
+};
+
+/////////
+// Phases
+/////////
+
+//Mental Phase
+Game_Actor.prototype.enterMentalPhase = function() {
+	if(this.isMentalPhaseDisabled()) return;
+	this.clearWillSkillsUsedCount();
+	this._mentalPhase = true;
+	this.refreshPose(true);
+	this.convertOrgasmRaidToAfter();
+	this.raidArousalCheck();
+};
+
+//Enter Action Phase
+//Called also by Skill 2
+Game_Actor.prototype.enterActionPhase = function() {
+	if(this._mentalPhase) {
+		this.emoteMasterManager();
+	}
+	this._mentalPhase = false;
+
+	if(this.energy > 0 || this.isInCombatPose()) {
+		this.checkOnaniInBattleDesire();
+
+		if(this._tempAttackSkillConsUsage >= 2 && this.isUsingThisTitle(TITLE_ID_DESCENSION_D3_HARD)) {
+			this._hasDescendedSilentFreeActionFlag = true;
+		}
+	}
+
+
+	if(!this.isDontGainFatiguePerTurnPose()) {
+		if(this.isInCombatPose() && !this.isUsingOpenPleasure()) {
+			$gameParty.increaseFatigueGain(PRISON_FATIGUE_PER_TURN_COMBAT);
+		}
+		else {
+			$gameParty.increaseFatigueGain(PRISON_FATIGUE_PER_TURN_OTHER);
+		}
+	}
+
+	if(this.isStateAffected(STATE_KARRYN_RESIST_ORGASM_ID) && this._stateTurns[STATE_KARRYN_RESIST_ORGASM_ID] <= 2) {
+		this.removeState(STATE_KARRYN_RESIST_ORGASM_ID);
+	}
+	if(this.isStateAffected(STATE_REALITY_MARBLE_ID) && this._stateTurns[STATE_REALITY_MARBLE_ID] <= 1) {
+		this.removeState(STATE_REALITY_MARBLE_ID);
+	}
+
+	if(this.isStateAffected(STATE_PLEASURE_STANCE_AUTO_MENTAL_ID)) {
+		this.addState(STATE_PLEASURE_STANCE_AUTO_MENTAL_EFFECT_ID);
+		BattleManager.endAction();
+	}
+
+	this.raidArousalCheck();
+
+	this.refreshPose(true);
+};
+
+Game_Actor.prototype.disableMentalPhase = function() {
+	this._disableMentalPhase = true;
+	this.enterActionPhase();
+};
+Game_Actor.prototype.enableMentalPhase = function() {
+	this._disableMentalPhase = false;
+};
+Game_Actor.prototype.isMentalPhaseDisabled = function() {
+	return this._disableMentalPhase;
+};
+
+Game_Actor.prototype.lastMentalCommandSymbol = function() {
+    return this._lastMentalCommandSymbol;
+};
+
+Game_Actor.prototype.setLastMentalCommandSymbol = function(symbol) {
+    this._lastMentalCommandSymbol = symbol;
+};
+
+Game_Actor.prototype.lastBattleSkill = function() {
+	if(this.actionPhase)
+		return this._lastBattleSkill.object();
+	else if(this.mentalPhase)
+		return this._lastMentalBattleSkill.object();
+};
+
+Game_Actor.prototype.setLastBattleSkill = function(skill) {
+	if(this.actionPhase)
+		this._lastBattleSkill.setObject(skill);
+	else if(this.mentalPhase)
+		this._lastMentalBattleSkill.setObject(skill);
+};
+
+Remtairy.Willpower.Game_Actor_makeActions = Game_Actor.prototype.makeActions;
+Game_Actor.prototype.makeActions = function() {
+    Remtairy.Willpower.Game_Actor_makeActions.call(this);
+	if(!this.canMove()) {
+		this.enterActionPhase();
+	}
+};
+
+Game_Actor.prototype.onTurnEnd = function() {
+    this.clearResult();
+	//this.resetSpriteBattlerPos();
+    this.regenerateAll();
+
+	if(!$gameScreen.isMapMode()) {
+		this.checkForOrgasm();
+		this.checkDisarmStateAtTurnEnd();
+		this.checkJustOrgasmStateAtTurnEnd();
+		this.emoteMasterManager();
+		this.enterMentalPhase();
+	}
+
+    this.removeStatesAuto(2);
+
+	if(!$gameScreen.isMapMode()) {
+		$gameParty.onTurnEndSpecial();
+	}
+};
+
+//New Wave
+Game_Actor.prototype.onStartOfConBat = function() {
+	//this.resetSpriteBattlerPos();
+	this._dontResetSexPose = false;
+    this.regenerateAll();
+	this.checkForOrgasm();
+	this.resetTauntAndConfidentOnNewWave();
+	this.removeStatesOnNewWave();
+	this.commitUncommittedCharmExp();
+	this.addState(STATE_KARRYN_FIRST_TURN_ID);
+	this.enterMentalPhase();
+};
+
+//////////
+// Willpower
+////////////
+
+Game_Actor.prototype.maxWill = function() {
+	let value = WILLPOWER_BASE_WP * this.paramRate(PARAM_MIND_ID);
+	value += this.mind * WILLPOWER_PER_MIND;
+	value += this._paramLvl[PARAM_MIND_ID] * WILLPOWER_PER_MIND_PLVL * this.paramRate(PARAM_MIND_ID);
+
+	if(this._denyingInternalEjaculations) {
+		if(value < 10) {
+			this._denyingInternalEjaculations = false;
+			this.cacheDesireTooltips();
+		}
+		else {
+			value -= 10;
+		}
+	}
+	if(this._denyingExternalEjaculations) {
+		if(value < 10) {
+			this._denyingExternalEjaculations = false;
+			this.cacheDesireTooltips();
+		}
+		else {
+			value -= 10;
+		}
+	}
+
+	if(this._reducingPleasureDamageByThird) {
+		if(value < 10) {
+			this._reducingPleasureDamageByThird = false;
+		}
+		else {
+			value -= 10;
+		}
+	}
+	if(this._reducingPleasureDamageByHalf) {
+		if(value < 15) {
+			this._reducingPleasureDamageByHalf = false;
+		}
+		else {
+			value -= 15;
+		}
+	}
+
+	return Math.max(0, Math.round(value));
+};
+
+Game_Actor.prototype.willRegenMultipler = function() {
+	if(this.isInMapPose() && !this.isInWaitressServingPose()) return 1;
+	let percentToOrgasm = this.currentPercentOfOrgasm(true) / 100;
+	let multipler = 1 - (percentToOrgasm * 0.5);
+	return multipler;
+};
+
+Game_Actor.prototype.clearWillSkillsUsedCount = function() {
+    this._willSkillsUsed = 0;
+};
+
+Game_BattlerBase.prototype.paySkillItemCost = function(skill) {
+    var array = this.skillItemCost(skill);
+    var max = array.length;
+    for (var i = 0; i < max; ++i) {
+      var item = array[i][0];
+      var cost = array[i][1];
+      this.payIndividualSkillItemCost(item, cost, skill);
+    }
+};
+
+Game_Actor.prototype.canPaySkillItemCost = function(skill) {
+    let array = this.skillItemCost(skill);
+    let max = array.length;
+    for (let i = 0; i < max; ++i) {
+		let item = array[i][0];
+		let cost = array[i][1];
+		if(item.id === ITEM_WILL_COST_ID) {
+			return (this.will >= this.calculateWillSkillCost(cost, skill));
+		}
+		else if(item.id === ITEM_SECOND_COST_ID) {
+			return true;
+		}
+    }
+    return Game_BattlerBase.prototype.canPaySkillItemCost.call(this, skill);
+};
+
+Game_Actor.prototype.payIndividualSkillItemCost = function(item, cost, skill) {
+    if(item.id === ITEM_WILL_COST_ID) {
+		this.gainWill(-this.calculateWillSkillCost(cost, skill));
+		this._willSkillsUsed++;
+	}
+	else if(item.id === ITEM_SECOND_COST_ID) {
+		this.advanceTimeBySeconds(cost);
+	}
+	else $gameParty.loseItem(item, cost, false);
+};
+
+Game_Actor.prototype.calculateWillSkillCost = function(baseCost, skill) {
+	let count = this._willSkillsUsed;
+	let cost = baseCost;
+	let skillId = skill.id;
+
+	if(skillId === SKILL_RESTORE_MIND_ID) {
+		return Math.round(cost * this.wsc);
+	}
+
+	if(count === 0 && !$gameParty._showTopRightTimeNumberFlag) {
+		cost = Math.min(cost, this.will);
+		cost = Math.max(1,cost);
+	}
+	else {
+		cost += 5 * count;
+	}
+
+	if(this.isHorny && this.hasPassive(PASSIVE_HORNY_COUNT_TWO_ID)) {
+		if(skillId === SKILL_SUPPRESS_MOUTH_DESIRE_ID || skillId === SKILL_SUPPRESS_BOOBS_DESIRE_ID ||
+		skillId === SKILL_SUPPRESS_PUSSY_DESIRE_ID || skillId === SKILL_SUPPRESS_BUTT_DESIRE_ID ||
+		skillId === SKILL_SUPPRESS_COCK_DESIRE_ID)
+			cost += 10;
+	}
+
+	return Math.round(cost * this.wsc);
+};
+
+Game_Actor.prototype.advanceTimeBySeconds = function(second) {
+	if($gameParty.isInWaitressBattle)
+		$gameParty.waitressBattle_advanceTimeBySeconds(second);
+	else if($gameParty.isInReceptionistBattle)
+		$gameParty.receptionBattle_advanceTimeBySeconds(second);
+	else if($gameParty.isInStripperBattle)
+		$gameParty.stripperBattle_advanceTimeBySeconds(second);
+	else if($gameParty.isInTrainerBattle)
+		$gameParty.trainerBattle_advanceTimeBySeconds(second);
+};
+
+/////////
+// Param
+////////////
+
+Game_Actor.prototype.willpowerParamRate = function(paramId) {
+	let wpParamRate = 1;
+	if(paramId === PARAM_CHARM_ID && this.isStateAffected(STATE_REALITY_MARBLE_ID)) {
+		wpParamRate += this.willpowerRealityMarbleEffect();
+		if(DLC_GYM && ConfigManager.voiceVolume > 0)
+			wpParamRate += 0.42;
+		else
+			wpParamRate += 0.33;
+	}
+
+    return wpParamRate;
+};
+
+
+
+Game_Actor.prototype.willpowerXParamPlus = function(id) {
+	let wpXParamPlus = 0;
+
+	if(id === XPARAM_CNT_ID && this.isStateAffected(STATE_FOCUS_ID))
+		wpXParamPlus += this.willpowerFocusXParamEffect();
+	if(this.isStateAffected(STATE_EYE_OF_THE_MIND_ID) && (id === XPARAM_HIT_ID || id === XPARAM_EVA_ID || id === XPARAM_CRIT_ID))
+		wpXParamPlus += this.willpowerEyeOfTheMindXParamEffect();
+	return wpXParamPlus;
+};
+
+
+
+Game_Actor.prototype.willpowerSParamRate = function(id) {
+	let wpSParamRate = 1;
+
+	if(id === SPARAM_WPATK_ID && this.isStateAffected(STATE_KI_ID))
+		wpSParamRate += this.willpowerKiSParamEffect();
+
+	return wpSParamRate;
+};
+
+////////
+// Element Rate
+//////////////
+
+Game_Actor.prototype.willpowerElementRate = function(elementId) {
+	let willpowerElementRate = 0;
+
+	switch(elementId) {
+	case ELEMENT_TALK_ID:
+		if(this.isStateAffected(STATE_HEAR_NO_EVIL_ID)) willpowerElementRate += this.willpowerSeeHearNoEvilEffect();
+	break;
+	case ELEMENT_SIGHT_ID:
+		if(this.isStateAffected(STATE_SEE_NO_EVIL_ID)) willpowerElementRate += this.willpowerSeeHearNoEvilEffect();
+	break;
+	case ELEMENT_STRIP_ID:
+		if(this.isStateAffected(STATE_EMPRESS_CLOTHES_ID)) willpowerElementRate += this.willpowerEmpressClothesEffect();
+		if(this.isStateAffected(STATE_EMPRESS_MAJESTY_ID)) willpowerElementRate += this.willpowerEmpressMajestyEffect();
+	break;
+	}
+
+	return willpowerElementRate;
+};
+
+
+/////////////
+// Suppress Desires
+///////////////
+
+Game_Actor.prototype.showEval_suppressDesires = function(area) {
+	if(!DEBUG_MODE || this.justOrgasmed()) return false;
+
+
+	return true;
+};
+
+Game_Actor.prototype.customReq_suppressDesires = function(area) {
+	if(this.isInSexPose()) {
+		switch(area) {
+		case AREA_COCK:
+			if(this.cockDesire <= this.getSuppressCockDesireLowerLimit()) return false;
+			break;
+		case AREA_MOUTH:
+			if(this.mouthDesire <= this.getSuppressMouthDesireLowerLimit()) return false;
+			break;
+		case AREA_BOOBS:
+			if(this.boobsDesire <= this.getSuppressBoobsDesireLowerLimit()) return false;
+			break;
+		case AREA_PUSSY:
+			if(this.pussyDesire <= this.getSuppressPussyDesireLowerLimit()) return false;
+			break;
+		case AREA_BUTT:
+			if(this.buttDesire <= this.getSuppressButtDesireLowerLimit()) return false;
+			break;
+		}
+	}
+
+	switch(area) {
+	case AREA_COCK: return this.cockDesire > 0;
+	case AREA_MOUTH: return this.mouthDesire > 0;
+	case AREA_BOOBS: return this.boobsDesire > 0;
+	case AREA_PUSSY: return this.pussyDesire > 0;
+	case AREA_BUTT: return this.buttDesire > 0;
+	}
+
+	return true;
+};
+
+Game_Actor.prototype.afterEval_suppressDesires = function(area) {
+	let baseValue = -5;
+	baseValue += this.mind * 1.5;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		baseValue -= -2;
+		baseValue += this.inBattleCharm * 0.42;
+	}
+
+	let variance = baseValue * 0.1;
+	baseValue += Math.random() * variance;
+	baseValue -= Math.random() * variance;
+
+	let cockMultipler = 1;
+	let mouthMultipler = 1;
+	let boobsMultipler = 1;
+	let pussyMultipler = 1;
+	let buttMultipler = 1;
+
+	if(this.hasPassive(CHARA_CREATE_THREE_SADO_ID) || this.hasPassive(CHARA_CREATE_THREE_MAZO_ID))
+		cockMultipler *= 0.7;
+	else if(this.hasPassive(CHARA_CREATE_THREE_ONANI_ID)) {
+		mouthMultipler *= 0.85;
+		boobsMultipler *= 0.85;
+		pussyMultipler *= 0.85;
+		buttMultipler *= 0.85;
+	}
+	else if(this.hasPassive(CHARA_CREATE_THREE_MOUTH_ID))
+		mouthMultipler *= 0.7;
+	else if(this.hasPassive(CHARA_CREATE_THREE_BOOBS_ID))
+		boobsMultipler *= 0.7;
+	else if(this.hasPassive(CHARA_CREATE_THREE_PUSSY_ID))
+		pussyMultipler *= 0.7;
+	else if(this.hasPassive(CHARA_CREATE_THREE_BUTT_ID))
+		buttMultipler *= 0.7;
+
+	cockMultipler *= 1 - (this.masochismLvl() + this.sadismLvl()) * 0.01;
+	mouthMultipler *= 1 - this.masturbateLvl() * 0.02;
+	boobsMultipler *= 1 - this.masturbateLvl() * 0.02;
+	pussyMultipler *= 1 - this.masturbateLvl() * 0.02;
+	buttMultipler *= 1 - this.masturbateLvl() * 0.02;
+
+	if(area == AREA_COCK) {
+		if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+			this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 40, 15, 0);
+		}
+		else {
+			this.gainMindExp(55, $gameTroop.getAverageEnemyExperienceLvl());
+		}
+	}
+	else {
+		if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+			this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 30, 10, 0);
+		}
+		else {
+			this.gainMindExp(40, $gameTroop.getAverageEnemyExperienceLvl());
+		}
+	}
+
+	baseValue = Math.max(1, baseValue);
+
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		switch(area) {
+		case AREA_COCK:
+			if(this.topDesireIsCockDesire()) cockMultipler *= 0.5;
+		break;
+		case AREA_MOUTH:
+			if(this.topDesireIsMouthDesire()) mouthMultipler *= 0.5;
+		break;
+		case AREA_BOOBS:
+			if(this.topDesireIsBoobsDesire()) boobsMultipler *= 0.5;
+		break;
+		case AREA_PUSSY:
+			if(this.topDesireIsPussyDesire()) pussyMultipler *= 0.5;
+		break;
+		case AREA_BUTT:
+			if(this.topDesireIsButtDesire()) buttMultipler *= 0.5;
+		break;
+		}
+	}
+
+	if(this.isAroused() && !this.reachedOrgasmPoint() && !this.isInMapPose() && (this.showEval_masturbateBattle_skillTouch() || this.buttDesire >= this.buttPettingButtDesireRequirement())) {}
+	else {
+		this.stopArousalRaid();
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+
+	switch(area) {
+	case AREA_COCK: return this.gainCockDesire(-baseValue * cockMultipler, true, false);
+	case AREA_MOUTH: return this.gainMouthDesire(-baseValue * mouthMultipler, true, false);
+	case AREA_BOOBS: return this.gainBoobsDesire(-baseValue * boobsMultipler, true, false);
+	case AREA_PUSSY: return this.gainPussyDesire(-baseValue * pussyMultipler, true, false);
+	case AREA_BUTT: return this.gainButtDesire(-baseValue * buttMultipler, true, false);
+	default: console.error('Error afterEval_suppressDesires area ' + area);
+	}
+};
+
+Game_Actor.prototype.getSuppressMouthDesireLowerLimit = function() {
+	let lowerLimit = 0;
+
+	if(this.isBodySlotPenis(MOUTH_ID))
+		lowerLimit = Math.max(lowerLimit, this.blowjobMouthDesireRequirement());
+	if(this.isBodySlotAnus(MOUTH_ID))
+		lowerLimit = Math.max(lowerLimit, this.rimjobMouthDesireRequirement());
+
+	let inKissingPose = false;
+	if(this.isInKickCounterSexPose())
+		inKissingPose = (this.tachieBody == 'kiss' || this.tachieBody == 'kiss_naked');
+	else if(this.isInReceptionistPose())
+		inKissingPose = this.receptionistBattle_isKissing();
+	if(inKissingPose)
+		lowerLimit = Math.max(lowerLimit, this.kissingMouthDesireRequirement());
+
+	if(this.wantsToOnaniInBattle() && (this.isInCombatPose() || this.isInMasturbationInBattlePose())) {
+		if(this.showEval_mbSuckFingers() && !this.showEval_mbTouchBoobs() && !this.showEval_mbTouchClit_noToy() && !this.showEval_mbTouchClit_pinkRotor() && !this.showEval_mbTouchAnal_noToy() && !this.showEval_mbTouchAnal_analBeads()) {
+			lowerLimit = Math.max(lowerLimit, this.suckFingersMouthDesireRequirement());
+		}
+	}
+
+	return Math.max(this.minimumMouthDesireLimit(), lowerLimit);
+};
+Game_Actor.prototype.getSuppressBoobsDesireLowerLimit = function() {
+	let lowerLimit = 0;
+
+	if(this.isBodySlotPenis(BOOBS_ID))
+		lowerLimit = Math.max(lowerLimit, this.tittyFuckBoobsDesireRequirement());
+
+	let inBoobsPettingPose = false;
+	if(this.isInReceptionistPose())
+		inBoobsPettingPose = this.receptionistBattle_gettingBoobsRubbed();
+	if(inBoobsPettingPose)
+		lowerLimit = Math.max(lowerLimit, this.boobsPettingBoobsDesireRequirement());
+
+	if(this.wantsToOnaniInBattle() && (this.isInCombatPose() || this.isInMasturbationInBattlePose())) {
+		if(!this.showEval_mbSuckFingers() && this.showEval_mbTouchBoobs() && !this.showEval_mbTouchClit_noToy() && !this.showEval_mbTouchClit_pinkRotor() && !this.showEval_mbTouchAnal_noToy() && !this.showEval_mbTouchAnal_analBeads()) {
+			lowerLimit = Math.max(lowerLimit, this.boobsPettingBoobsDesireRequirement());
+		}
+	}
+
+	return Math.max(this.minimumBoobsDesireLimit(), lowerLimit);
+};
+Game_Actor.prototype.getSuppressPussyDesireLowerLimit = function() {
+	let lowerLimit = 0;
+
+	if(this.isBodySlotPenis(PUSSY_ID))
+		lowerLimit = Math.max(lowerLimit, this.pussySexPussyDesireRequirement());
+	if(this.isBodySlotTongue(PUSSY_ID))
+		lowerLimit = Math.max(lowerLimit, this.cunnilingusPussyDesireRequirement());
+	if(this.isWearingPussyToy())
+		lowerLimit = Math.max(lowerLimit, this.pussyToyPussyDesireRequirement());
+	if(this.isWearingClitToy())
+		lowerLimit = Math.max(lowerLimit, this.clitToyPussyDesireRequirement());
+
+	if(this.wantsToOnaniInBattle() && (this.isInCombatPose() || this.isInMasturbationInBattlePose())) {
+		if(!this.showEval_mbSuckFingers() && !this.showEval_mbTouchBoobs() && (this.showEval_mbTouchClit_noToy() || this.showEval_mbTouchClit_pinkRotor()) && !this.showEval_mbTouchAnal_noToy() && !this.showEval_mbTouchAnal_analBeads()) {
+			lowerLimit = Math.max(lowerLimit, this.clitPettingPussyDesireRequirement());
+		}
+	}
+
+	return Math.max(this.minimumPussyDesireLimit(), lowerLimit);
+};
+Game_Actor.prototype.getSuppressButtDesireLowerLimit = function() {
+	let lowerLimit = 0;
+
+	if(this.isBodySlotPenis(ANAL_ID))
+		lowerLimit = Math.max(lowerLimit, this.analSexButtDesireRequirement());
+	if(this.isWearingAnalToy())
+		lowerLimit = Math.max(lowerLimit, this.analToyButtDesireRequirement());
+
+	if(this.wantsToOnaniInBattle() && (this.isInCombatPose() || this.isInMasturbationInBattlePose())) {
+		if(!this.showEval_mbSuckFingers() && !this.showEval_mbTouchBoobs() && !this.showEval_mbTouchClit_noToy() && !this.showEval_mbTouchClit_pinkRotor() && (this.showEval_mbTouchAnal_noToy() || this.showEval_mbTouchAnal_analBeads())) {
+			lowerLimit = Math.max(lowerLimit, this.analPettingButtDesireRequirement());
+		}
+	}
+
+	return Math.max(this.minimumButtDesireLimit(), lowerLimit);
+};
+Game_Actor.prototype.getSuppressCockDesireLowerLimit = function() {
+	let lowerLimit = 0;
+
+	if(this.isBodySlotPenis(MOUTH_ID))
+		lowerLimit = Math.max(lowerLimit, this.blowjobCockDesireRequirement());
+	if(this.isBodySlotPenis(BOOBS_ID))
+		lowerLimit = Math.max(lowerLimit, this.tittyFuckCockDesireRequirement());
+	if(this.isBodySlotPenis(PUSSY_ID))
+		lowerLimit = Math.max(lowerLimit, this.pussySexCockDesireRequirement());
+	if(this.isBodySlotPenis(ANAL_ID))
+		lowerLimit = Math.max(lowerLimit, this.analSexCockDesireRequirement());
+	if(this.isBodySlotPenis(LEFT_HAND_ID) || this.isBodySlotPenis(RIGHT_HAND_ID))
+		lowerLimit = Math.max(lowerLimit, this.handjobCockDesireRequirement());
+	if(this.isBodySlotPenis(FEET_ID))
+		lowerLimit = Math.max(lowerLimit, this.footjobCockDesireRequirement());
+
+	return Math.max(this.minimumCockDesireLimit(), lowerLimit);
+};
+
+
+/////////////
+// Conscious Desires
+// Release Desires
+///////////////
+
+Game_Actor.prototype.showEval_consciousDesires = function(area) {
+	if(!DEBUG_MODE || this.justOrgasmed()) return false;
+
+	if($gameParty.isInWaitressBattle) {
+		if(!this.hasPassive(PASSIVE_BAR_WAITRESS_SEX_COUNT_ONE_ID)) return false;
+	}
+	else if($gameParty.isInReceptionistBattle) {
+		if(!this.hasPassive(PASSIVE_RECEPTIONIST_VISITOR_SEX_COUNT_ONE_ID)) return false;
+	}
+	else if($gameParty.isInStripperBattle) {
+		if(!this.hasPassive(PASSIVE_STRIPPER_PATRON_SEX_COUNT_ONE_ID)) return false;
+	}
+	else if($gameParty.isInTrainerBattle) {
+		if(!this.hasPassive(PASSIVE_TRAINER_GYMGOER_SEX_COUNT_ONE_ID)) return false;
+	}
+
+	switch(area) {
+	case AREA_COCK: return this.hasEdict(EDICT_RELEASE_COCK_DESIRE);
+	case AREA_MOUTH: return this.hasEdict(EDICT_RELEASE_DESIRES);
+	case AREA_BOOBS: return this.hasEdict(EDICT_RELEASE_DESIRES);
+	case AREA_PUSSY: return this.hasEdict(EDICT_RELEASE_DESIRES);
+	case AREA_BUTT: return this.hasEdict(EDICT_RELEASE_DESIRES);
+	}
+
+	return false;
+};
+
+Game_Actor.prototype.customReq_consciousDesires = function(area) {
+	switch(area) {
+	case AREA_COCK:
+		return this.cockDesire < this.maxCockDesire;
+	case AREA_MOUTH:
+		return this.mouthDesire < this.maxMouthDesire;
+	case AREA_BOOBS:
+		return this.boobsDesire < this.maxBoobsDesire;
+	case AREA_PUSSY:
+		return this.pussyDesire < this.maxPussyDesire;
+	case AREA_BUTT:
+		return this.buttDesire < this.maxButtDesire;
+	}
+
+	return false
+};
+
+Game_Actor.prototype.afterEval_consciousDesires = function(area) {
+	let baseValue = -8;
+	baseValue += this.mind * 1.33;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		baseValue += this.inBattleCharm * 0.33;
+	}
+
+	let variance = baseValue * 0.1;
+	baseValue += Math.random() * variance;
+	baseValue -= Math.random() * variance;
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 30, 10, 0);
+	}
+	else {
+		this.gainMindExp(40, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_RELEASE_DESIRE_ID);
+	this.emoteMasterManager();
+
+	switch(area) {
+	case AREA_COCK: return this.gainCockDesire(baseValue, true, false);
+	case AREA_MOUTH: return this.gainMouthDesire(baseValue, true, false);
+	case AREA_BOOBS: return this.gainBoobsDesire(baseValue, true, false);
+	case AREA_PUSSY: return this.gainPussyDesire(baseValue, true, false);
+	case AREA_BUTT: return this.gainButtDesire(baseValue, true, false);
+	default: console.error('Error afterEval_consciousDesires area ' + area);
+	}
+};
+
+///////////////
+// Healing Thoughts
+/////////////
+
+Game_Actor.prototype.showEval_healingThoughts = function() {
+	if(this.justOrgasmed()) return false;
+	if(this.isUsingThisTitle(TITLE_ID_DESCENSION_D5_HARD)) return false;
+	return this.hasEdict(EDICT_HEALING_THOUGHTS_ONE);
+};
+Game_Actor.prototype.dmgFormula_healingThoughts = function() {
+	let mindExp = 40;
+	let percent = 0.15;
+	percent += this.mind / 300
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		percent += this.inBattleCharm / 600;
+	}
+	if(this.hasEdict(EDICT_HEALING_THOUGHTS_TWO)) {
+		percent *= 1.3;
+		mindExp += 10;
+	}
+
+	let dmg = this.maxenergy * percent;
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.7, mindExp * 0.3, 0);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	return Math.round(dmg);
+};
+
+Game_Actor.prototype.cooldownEval_healingThoughts = function() {
+	let baseCD = 3;
+	if(this.hasEdict(EDICT_SPEC_DEFENSIVE_MIND_HEALING)) baseCD--;
+	let currentCD = baseCD + Math.floor(this._tempHealingThoughtsExtraCooldown);
+	let extraCDrate = 1;
+	if(Karryn.isInReceptionistPose()) extraCDrate *= RECEPTIONIST_MENTAL_PHASE_COOLDOWN;
+	else if($gameParty.isInGloryBattle) extraCDrate *= GLORY_MENTAL_PHASE_COOLDOWN;
+	this._tempHealingThoughtsExtraCooldown += 0.5 * extraCDrate;
+	return currentCD;
+};
+
+///////////////
+// Mind Over Matter
+/////////////
+
+Game_Actor.prototype.showEval_mindOverMatter = function() {
+	if(this.justOrgasmed()) return false;
+	if(this.isUsingThisTitle(TITLE_ID_DESCENSION_D5_HARD)) return false;
+	return this.hasEdict(EDICT_MIND_OVER_MATTER);
+};
+
+Game_Actor.prototype.dmgFormula_mindOverMatter = function() {
+	let percent = 0.5;
+	percent += this.mind / 200
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		percent += this.inBattleCharm / 400;
+	}
+
+	let dmg = this.maxenergy * percent;
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 65, 20, 10);
+	}
+	else {
+		this.gainMindExp(95, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	return Math.round(dmg);
+};
+
+Game_Actor.prototype.cooldownEval_mindOverMatter = function() {
+	let baseCD = 8;
+	let currentCD = baseCD + Math.floor(this._tempMindOverMatterExtraCooldown);
+	let extraCDrate = 1;
+	if(Karryn.isInReceptionistPose()) extraCDrate *= RECEPTIONIST_MENTAL_PHASE_COOLDOWN;
+	else if($gameParty.isInGloryBattle) extraCDrate *= GLORY_MENTAL_PHASE_COOLDOWN;
+	this._tempMindOverMatterExtraCooldown += 1 * extraCDrate;
+	return currentCD;
+};
+
+////////////////////////////////////
+// See No Evil, Hear No Evil, Speak No Evil
+/////////////////////////////////////////
+
+Game_Actor.prototype.showEval_seeNoEvil = function() {
+	if(this.justOrgasmed()) return false;
+	if(!DEBUG_MODE) return false;
+	if(this.isInSexPose()) return false;
+	if($gameParty.isInTrainerBattle) return false;
+	return this.hasEdict(EDICT_SEE_NO_EVIL);
+};
+Game_Actor.prototype.showEval_hearNoEvil = function() {
+	if(this.justOrgasmed()) return false;
+	if(!DEBUG_MODE) return false;
+	if(this.isInSexPose()) return false;
+	if($gameParty.isInTrainerBattle) return false;
+	return this.hasEdict(EDICT_HEAR_NO_EVIL);
+};
+
+Game_Actor.prototype.afterEval_seeNoEvil = function() {
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 30, 15, 0);
+	}
+	else {
+		this.gainMindExp(45, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_SEE_NO_EVIL_ID);
+
+	if(Karryn.isInReceptionistPose()) {
+		this.setStateTurns(STATE_SEE_NO_EVIL_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN);
+	}
+	else if($gameParty.isInGloryBattle) {
+		this.setStateTurns(STATE_SEE_NO_EVIL_ID, GLORY_MENTAL_PHASE_COOLDOWN);
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+Game_Actor.prototype.afterEval_hearNoEvil = function() {
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 30, 15, 0);
+	}
+	else {
+		this.gainMindExp(45, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_HEAR_NO_EVIL_ID);
+
+	if(Karryn.isInReceptionistPose()) {
+		this.setStateTurns(STATE_HEAR_NO_EVIL_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN);
+	}
+	else if($gameParty.isInGloryBattle) {
+		this.setStateTurns(STATE_HEAR_NO_EVIL_ID, GLORY_MENTAL_PHASE_COOLDOWN);
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+
+Game_Actor.prototype.willpowerSeeHearNoEvilEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return -1 * (30 + power) / 100;
+};
+
+Game_Actor.prototype.showEval_speakNoEvil = function() {
+	if(this.justOrgasmed()) return false;
+	if(!DEBUG_MODE) return false;
+	if(this.isInSexPose()) return false;
+	if(this.isStateAffected(STATE_SEE_NO_EVIL_ID) && this.isStateAffected(STATE_HEAR_NO_EVIL_ID))
+		return this.hasEdict(EDICT_SPEAK_NO_EVIL);
+};
+Game_Actor.prototype.showEval_speakNoEvilGray = function() {
+	if(this.justOrgasmed() || this.isInSexPose() || !this.hasEdict(EDICT_SPEAK_NO_EVIL) || !DEBUG_MODE) return false;
+	if($gameParty.isInTrainerBattle) return false;
+	if(this.isStateAffected(STATE_SEE_NO_EVIL_ID) && this.isStateAffected(STATE_HEAR_NO_EVIL_ID)) return false;
+	return true;
+};
+
+Game_Actor.prototype.afterEval_speakNoEvil = function() {
+	let baseValue = -10;
+	baseValue += this.mind * 1.33;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		baseValue += this.inBattleCharm * 0.33;
+	}
+
+	let mouthValue = baseValue;
+	let boobsValue = baseValue;
+	let pussyValue = baseValue;
+	let buttValue = baseValue;
+	let cockValue = baseValue;
+
+	let variance = baseValue * 0.1;
+
+	mouthValue += Math.random() * variance;
+	mouthValue -= Math.random() * variance;
+	boobsValue += Math.random() * variance;
+	boobsValue -= Math.random() * variance;
+	pussyValue += Math.random() * variance;
+	pussyValue -= Math.random() * variance;
+	buttValue += Math.random() * variance;
+	buttValue -= Math.random() * variance;
+	cockValue += Math.random() * variance;
+	cockValue -= Math.random() * variance;
+
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		if(this.topDesireIsCockDesire()) cockValue *= 0.5;
+		if(this.topDesireIsMouthDesire()) mouthValue *= 0.5;
+		if(this.topDesireIsBoobsDesire()) boobsValue *= 0.5;
+		if(this.topDesireIsPussyDesire()) pussyValue *= 0.5;
+		if(this.topDesireIsButtDesire()) buttValue *= 0.5;
+	}
+
+	mouthValue = Math.max(1, mouthValue);
+	boobsValue = Math.max(1, boobsValue);
+	pussyValue = Math.max(1, pussyValue);
+	buttValue = Math.max(1, buttValue);
+	cockValue = Math.max(1, cockValue);
+
+	this.gainMouthDesire(-mouthValue, true, false);
+	this.gainBoobsDesire(-boobsValue, true, false);
+	this.gainButtDesire(-buttValue, true, false);
+	this.gainPussyDesire(-pussyValue, true, false);
+	this.gainCockDesire(-cockValue, true, false);
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 40, 25, 10);
+	}
+	else {
+		this.gainMindExp(75, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	if(this.isAroused() && !this.reachedOrgasmPoint() && !this.isInMapPose() && (this.showEval_masturbateBattle_skillTouch() || this.buttDesire >= this.buttPettingButtDesireRequirement())) {}
+	else {
+		this.stopArousalRaid();
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+
+/////////////
+// Empress's Majesty
+///////////////
+
+Game_Actor.prototype.showEval_empressMajesty = function() {
+	if(this.justOrgasmed()) return false;
+	if(this.isInSexPose() || this.isClothingMaxDamaged() || !DEBUG_MODE) return false;
+	return this.hasEdict(EDICT_EMPRESS_MAJESTY);
+};
+
+Game_Actor.prototype.afterEval_empressMajesty = function() {
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 25, 10, 0);
+	}
+	else {
+		this.gainMindExp(35, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+
+Game_Actor.prototype.willpowerEmpressMajestyEffect = function() {
+	return -1 * (25 + this.mind) / 100;
+};
+
+/////////////
+// Empress's Clothes
+///////////////
+
+Game_Actor.prototype.showEval_empressClothes = function() {
+	if(this.justOrgasmed()) return false;
+	if(this.isInSexPose() || this.isClothingMaxDamaged() || !DEBUG_MODE) return false;
+	return this.hasEdict(EDICT_EMPRESS_CLOTHES);
+};
+
+Game_Actor.prototype.afterEval_empressClothes = function() {
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 25, 15, 0);
+	}
+	else {
+		this.gainMindExp(40, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+
+Game_Actor.prototype.willpowerEmpressClothesEffect = function() {
+	return (15 + this.mind * 1.5) / 100;
+};
+
+/////////////
+// Reality Marble
+///////////////
+
+Game_Actor.prototype.showEval_realityMarble = function() {
+	if(this.justOrgasmed()) return false;
+	if(this.isInWaitressServingPose() || this.isInReceptionistPose() || $gameParty.isInGloryBattle) return false;
+	return this.hasEdict(EDICT_REALITY_MARBLE);
+};
+
+Game_Actor.prototype.afterEval_realityMarble = function() {
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), 35, 15, 10);
+	}
+	else {
+		this.gainMindExp(60, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+
+Game_Actor.prototype.willpowerRealityMarbleEffect = function() {
+	return (this.mind) / 100;
+};
+
+/////////////
+// Eye of the Mind
+///////////////
+
+Game_Actor.prototype.showEval_eyeOfTheMind = function() {
+	if(this.justOrgasmed()) return false;
+
+	return this.hasEdict(EDICT_EYE_OF_THE_MIND) &&
+	(this.isInCombatPose() || (this.hasEdict(EDICT_SPEC_SENSUAL_MIND_EOTM) && this.isInSexPose()));
+};
+Game_Actor.prototype.afterEval_eyeOfTheMind = function() {
+	let mindExp = 55;
+	if(this.hasEdict(EDICT_SPEC_OFFENSIVE_MIND_EOTM)) mindExp += 15;
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_EYE_OF_THE_MIND_ID);
+
+	if(Karryn.isInReceptionistPose()) {
+		this.setStateTurns(STATE_EYE_OF_THE_MIND_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN);
+	}
+	else if($gameParty.isInGloryBattle) {
+		this.setStateTurns(STATE_EYE_OF_THE_MIND_ID, GLORY_MENTAL_PHASE_COOLDOWN);
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+Game_Actor.prototype.willpowerEyeOfTheMindXParamEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return power / 100;
+};
+Game_Actor.prototype.willpowerEyeOfTheMindCritDmgEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return power / 150;
+};
+
+/////////////
+// Ki and Focus
+///////////////
+
+Game_Actor.prototype.showEval_ki = function() {
+	if(this.justOrgasmed()) return false;
+	return this.isInCombatPose();
+};
+Game_Actor.prototype.afterEval_ki = function() {
+	let mindExp = 40;
+	if(this.hasEdict(EDICT_SPEC_OFFENSIVE_MIND_KI)) mindExp += 10;
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+Game_Actor.prototype.willpowerKiSParamEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return (30 + power) / 100;
+};
+Game_Actor.prototype.willpowerKiCritDmgEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return power / 100;
+};
+
+Game_Actor.prototype.showEval_focus = function() {
+	if(this.justOrgasmed()) return false;
+	return this.isInCombatPose();
+};
+Game_Actor.prototype.afterEval_focus = function() {
+	let mindExp = 40;
+	if(this.hasEdict(EDICT_SPEC_DEFENSIVE_MIND_FOCUS)) mindExp += 10;
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+Game_Actor.prototype.willpowerFocusXParamEffect = function() {
+	if(!this.isInCombatPose()) return 0;
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return (20 + power / 2) / 100;
+};
+Game_Actor.prototype.willpowerFocusOverblowProtectionEffect = function() {
+	if(!this.isInCombatPose()) return 0;
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return power / 1000;
+};
+
+
+/////////////
+// Edging Control
+///////////////
+
+Game_Actor.prototype.showEval_edgingControl = function() {
+	if(this.justOrgasmed()) return false;
+	if(!DEBUG_MODE) return false;
+	if(this.isInWaitressServingPose()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return this.hasEdict(EDICT_EDGING_CONTROL) && !this.isInDownPose();
+};
+Game_Actor.prototype.afterEval_edgingControl = function() {
+	let mindExp = 50;
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_KARRYN_EDGING_CONTROL_ID);
+
+	if(Karryn.isInReceptionistPose()) {
+		this.setStateTurns(STATE_KARRYN_EDGING_CONTROL_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN);
+	}
+	else if($gameParty.isInGloryBattle) {
+		this.setStateTurns(STATE_KARRYN_EDGING_CONTROL_ID, GLORY_MENTAL_PHASE_COOLDOWN);
+	}
+};
+Game_Actor.prototype.willpowerEdgingControlEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return 1 + ((10 + power * 2) / 100);
+};
+Game_Actor.prototype.addEnemyEdgingControlStateToTarget = function(target) {
+	if(this.isStateAffected(STATE_KARRYN_EDGING_CONTROL_ID) && target.isEnemy()) {
+		target.addState(STATE_ENEMY_EDGING_CONTROL_ID);
+	}
+};
+
+/////////////
+// Resist Orgasm
+///////////////
+
+Game_Actor.prototype.showEval_resistOrgasm = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && this.hasEdict(EDICT_RESIST_ORGASM);
+};
+Game_Actor.prototype.afterEval_resistOrgasm = function() {
+	let mindExp = 65;
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_KARRYN_RESIST_ORGASM_ID);
+	this.addState(STATE_KARRYN_RESIST_ORGASM_ICON_ID);
+
+	if(Karryn.isInReceptionistPose()) {
+		this.setStateTurns(STATE_KARRYN_RESIST_ORGASM_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN + 2);
+		this.setStateTurns(STATE_KARRYN_RESIST_ORGASM_ICON_ID, RECEPTIONIST_MENTAL_PHASE_COOLDOWN);
+	}
+	else if($gameParty.isInGloryBattle) {
+		this.setStateTurns(STATE_KARRYN_RESIST_ORGASM_ID, GLORY_MENTAL_PHASE_COOLDOWN + 2);
+		this.setStateTurns(STATE_KARRYN_RESIST_ORGASM_ICON_ID, GLORY_MENTAL_PHASE_COOLDOWN);
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+};
+Game_Actor.prototype.willpowerResistOrgasmEffect = function() {
+	let power = this.mind;
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		power += this.inBattleCharm * 0.25;
+	}
+	return 1 + ((20 + power * 2) / 100);
+};
+
+////////
+// Restore Mind
+
+Game_Actor.prototype.showEval_restoreMind = function() {
+	return this.justOrgasmed() && !this.isInMasturbationCouchPose();
+};
+Game_Actor.prototype.afterEval_restoreMind = function() {
+	let chance = this.mind * 2.5;
+	let reduction = 1;
+	let mindExp = 0;
+
+	if(Karryn.hasEdict(EDICT_DIFFERENT_MINDSET_SCENARIO)) {
+		chance += this.inBattleCharm * 0.69;
+	}
+
+	if(chance > 90) {
+		if(Math.randomInt(100) < (chance - 90))
+			reduction++;
+	}
+	if(Math.randomInt(100) < chance) {
+		if($gameParty._showTopRightTimeNumberFlag) {
+			reduction *= 2;
+		}
+
+		if(this.stamina === 0 && this.getJustOrgasmedStateTurns() <= reduction) {
+			this._remLine_skipNextDownStamina = true;
+		}
+
+		this.increaseJustOrgasmedStateTurns(-1 * reduction);
+
+		if(!this.justOrgasmed()) {
+			BattleManager._logWindow.push('addText', TextManager.restoreMindFullSuccess.format(this.name()));
+			BattleManager.playKarrynVoice_RestoreMind(true);
+			this.emoteMasterManager();
+			this.stopOrgasmRaids();
+		}
+		else {
+			BattleManager._logWindow.push('addText', TextManager.restoreMindPartialSuccess.format(this.name()));
+			BattleManager.playKarrynVoice_RestoreMind(false);
+		}
+
+		mindExp = 65;
+	}
+	else {
+		BattleManager._logWindow.push('addText', TextManager.restoreMindFailure.format(this.name()));
+		BattleManager.playKarrynVoice_RestoreMind(false);
+
+		mindExp = 35;
+	}
+
+	if(Karryn.hasEdict(EDICT_PRISON_EMBLEM_SCENARIO)) {
+		this.gainDescensionRandomStatsExp($gameTroop.getAverageEnemyExperienceLvl(), mindExp * 0.66, mindExp * 0.24, mindExp * 0.1);
+	}
+	else {
+		this.gainMindExp(mindExp, $gameTroop.getAverageEnemyExperienceLvl());
+	}
+
+	this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+	this.emoteMasterManager();
+
+	if(!this.hasEdict(EDICT_SPEC_SENSUAL_MIND_RESTORE)) this.enterActionPhase();
+};
+
+/////////////
+// Deny Ejaculations
+///////////////
+
+Game_Actor.prototype.showEval_denyExternalEjaculations = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && !this._denyingExternalEjaculations && this.hasPassive(PASSIVE_FLOOR_EJACULATION_COUNT_ONE_ID);
+};
+Game_Actor.prototype.showEval_acceptExternalEjaculations = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && this._denyingExternalEjaculations && this.hasPassive(PASSIVE_FLOOR_EJACULATION_COUNT_ONE_ID);
+};
+Game_Actor.prototype.showEval_denyInternalEjaculations = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && !this._denyingInternalEjaculations && this.hasPassive(PASSIVE_FLOOR_EJACULATION_COUNT_TWO_ID);
+};
+Game_Actor.prototype.showEval_acceptInternalEjaculations = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && this._denyingInternalEjaculations && this.hasPassive(PASSIVE_FLOOR_EJACULATION_COUNT_TWO_ID);
+};
+
+Game_Actor.prototype.afterEval_denyExternalEjaculation = function(status) {
+	this._denyingExternalEjaculations = status;
+	this.cacheDesireTooltips();
+	if(status) {
+		this.gainWill(-10);
+		this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+		this.emoteMasterManager();
+	}
+};
+Game_Actor.prototype.afterEval_denyInternalEjaculation = function(status) {
+	this._denyingInternalEjaculations = status;
+	this.cacheDesireTooltips();
+	if(status) {
+		this.gainWill(-10);
+		this.addState(STATE_STANDBY_EMOTE_USED_BATTLE_SKILLS_ID);
+		this.emoteMasterManager();
+	}
+};
+
+/////////
+// Trainer Will
+/////////
+
+Game_Actor.prototype.showEval_reducePleasureDamageByThird_toggleOn = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && !this._reducingPleasureDamageByThird && this.hasPassive(PASSIVE_TRAINER_GYMGOER_SEX_COUNT_TWO_ID);
+};
+Game_Actor.prototype.showEval_reducePleasureDamageByThird_toggleOff = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && this._reducingPleasureDamageByThird && this.hasPassive(PASSIVE_TRAINER_GYMGOER_SEX_COUNT_TWO_ID);
+};
+Game_Actor.prototype.showEval_reducePleasureDamageByHalf_toggleOn = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && !this._reducingPleasureDamageByHalf && this.hasPassive(PASSIVE_TRAINER_GYMGOER_SEX_COUNT_THREE_ID);
+};
+Game_Actor.prototype.showEval_reducePleasureDamageByHalf_toggleOff = function() {
+	if(this.justOrgasmed()) return false;
+	if($gameParty.isInStripperBattle && !this.isInStripperSexPose()) return false;
+	return DEBUG_MODE && this._reducingPleasureDamageByHalf && this.hasPassive(PASSIVE_TRAINER_GYMGOER_SEX_COUNT_THREE_ID);
+};
+
+Game_Actor.prototype.afterEval_reducePleasureDamageByThird = function(status) {
+	this._reducingPleasureDamageByThird = status;
+	if(status) {
+		this.gainWill(-10);
+		this.addState(STATE_STANDBY_EMOTE_USED_RELEASE_DESIRE_ID);
+		this.emoteMasterManager();
+	}
+};
+Game_Actor.prototype.afterEval_reducePleasureDamageByHalf = function(status) {
+	this._reducingPleasureDamageByHalf = status;
+	if(status) {
+		this.gainWill(-15);
+		this.addState(STATE_STANDBY_EMOTE_USED_RELEASE_DESIRE_ID);
+		this.emoteMasterManager();
+	}
+};
+
+
+
+//unused
+Game_Actor.prototype.tachieHalberdTone = function() {
+	var WILLPOWER_KI_HALBERD_COLOR_RED = 0;
+	var WILLPOWER_KI_HALBERD_COLOR_GREEN = -10;
+	var WILLPOWER_KI_HALBERD_COLOR_BLUE = -45;
+
+	var tone = [0, 0, 0];
+	if(this.isStateAffected(STATE_KI_ID)) {
+		tone = [WILLPOWER_KI_HALBERD_COLOR_RED, WILLPOWER_KI_HALBERD_COLOR_GREEN, WILLPOWER_KI_HALBERD_COLOR_BLUE];
+	}
+	return tone;
+};
